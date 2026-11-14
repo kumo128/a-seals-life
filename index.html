@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Seal's Life</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <button id="sound-toggle" class="sound-toggle" type="button" aria-label="Mute game audio" title="Mute game audio">🔊</button>
+
+    <!-- Screen 1: the calm welcome screen. -->
+    <section id="start-screen" class="screen screen--active" aria-labelledby="start-title">
+      <div class="screen__content">
+        <p class="eyebrow">A small life in a wide ocean</p>
+        <img class="start-hero-image" src="assets/seals/mother-and-pup.png" alt="A mother Harbor Seal with her pup">
+        <h1 id="start-title">A SEAL'S LIFE</h1>
+        <p class="subtitle">Same Ocean. Different Stories.</p>
+        <p class="intro">An interactive life simulation game of a Harbor Seal.</p>
+        <button id="new-life-button" class="button button--primary" type="button">BEGIN A NEW LIFE</button>
+      </div>
+    </section>
+
+    <!-- Screen 2: one seal is created and its traits are kept in game state. -->
+    <section id="birth-screen" class="screen" aria-labelledby="birth-title" hidden>
+      <div class="screen__content card">
+        <p class="eyebrow">A first breath of ocean air</p>
+        <h2 id="birth-title">A NEW LIFE BEGINS...</h2>
+        <p>You were born as a Harbor Seal.</p>
+        <p class="scientific-name"><em>Phoca vitulina</em></p>
+
+        <div class="seal-portrait" aria-hidden="true">
+          <img class="seal-stage-image" src="assets/seals/pup-resting.png" alt="A resting Harbor Seal pup">
+        </div>
+
+        <dl class="traits">
+          <div><dt>Sex</dt><dd id="sex-value"></dd></div>
+          <div><dt>Coat Colour</dt><dd id="coat-value"></dd></div>
+          <div><dt>Spot Pattern</dt><dd id="spots-value"></dd></div>
+          <div><dt>Health</dt><dd id="birth-health-value"></dd></div>
+          <div><dt>Energy</dt><dd id="birth-energy-value"></dd></div>
+        </dl>
+
+        <button id="begin-life-button" class="button button--primary" type="button">BEGIN YOUR LIFE</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: reusable story-event layout for the first choice. -->
+    <section id="story-screen" class="screen" aria-labelledby="story-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 2 WEEKS</strong></span>
+          <span>HEALTH <strong id="story-health">●●●</strong></span>
+          <span>ENERGY <strong id="story-energy">●●●</strong></span>
+        </header>
+
+        <article class="story-card narrative-card">
+          <p class="eyebrow">Your first question</p>
+          <h2 id="story-title">WHERE IS MOM?</h2>
+          <div class="story-text">
+            <p>Your mother enters the water to search for food.</p>
+            <p>Time passes.</p>
+            <p>She still hasn't returned.</p>
+          </div>
+
+          <div class="choices" aria-label="Story choices">
+            <button id="wait-button" class="button button--choice" type="button">WAIT ON SHORE</button>
+            <button id="water-button" class="button button--choice" type="button">ENTER THE WATER</button>
+          </div>
+          <p id="consequence" class="consequence" role="status" aria-live="polite"></p>
+          <div id="wait-flow" class="wait-flow" hidden>
+            <button id="wait-step-button" class="button button--primary" type="button">WAIT</button>
+            <button id="wait-enter-water-button" class="button button--primary" type="button" hidden>ENTER THE WATER</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 4: the top-down First Swim mini-game. -->
+    <section id="first-swim-screen" class="screen" aria-labelledby="first-swim-title" hidden>
+      <div class="story-layout first-swim-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 2 WEEKS</strong></span>
+          <span>HEALTH <strong id="swim-health">●●●</strong></span>
+          <span>ENERGY <strong id="swim-energy">●●●</strong></span>
+          <span>COLLISIONS <strong id="collision-count">0 / 3</strong></span>
+        </header>
+
+        <article class="story-card first-swim-card">
+          <p class="eyebrow">A careful journey through the shallows</p>
+          <h2 id="first-swim-title">FIRST SWIM</h2>
+          <p id="swim-message" class="swim-message">Drag your seal through the water and avoid the rocks and seaweed.</p>
+
+          <div id="game-area" class="game-area" aria-label="First Swim play area" role="application">
+            <div class="game-water-lines" aria-hidden="true"></div>
+            <img id="player-seal" class="swim-seal" src="assets/seals/pup-swimming.png" role="img" alt="Your Harbor Seal">
+            <img id="mother-seal" class="swim-seal mother-seal" src="assets/seals/adult-resting.png" role="img" alt="Mother seal" hidden>
+          </div>
+
+          <div class="journey-progress" aria-label="Journey progress">
+            <span>START</span>
+            <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+            <span>MOTHER</span>
+          </div>
+
+          <div id="swim-result" class="swim-result" hidden>
+            <p id="swim-result-title"></p>
+            <p id="swim-result-text"></p>
+            <button id="swim-continue-button" class="button button--primary" type="button">CONTINUE</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 5: the temporary outcome after serious First Swim injury. -->
+    <section id="rescue-event-screen" class="screen" aria-labelledby="rescue-event-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 2 WEEKS</strong></span>
+          <span>HEALTH <strong id="rescue-health">●●●</strong></span>
+          <span>ENERGY <strong id="rescue-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A life-changing moment</p>
+          <h2 id="rescue-event-title"></h2>
+          <div id="rescue-event-story" class="story-text"></div>
+          <div id="rescue-record" class="traits rescue-record" hidden>
+            <div><dt>HARBOR SEAL</dt><dd id="record-age">Age: 2 Weeks</dd></div>
+            <div><dt>SEX</dt><dd id="record-sex"></dd></div>
+            <div><dt>COAT COLOUR</dt><dd id="record-coat"></dd></div>
+            <div><dt>SPOT PATTERN</dt><dd id="record-spots"></dd></div>
+          </div>
+          <button id="rescue-event-button" class="button button--primary" type="button"></button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 5: early life beside the mother after First Swim. -->
+    <section id="early-life-transition-screen" class="screen" aria-labelledby="early-life-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 2 WEEKS</strong></span>
+          <span>HEALTH <strong id="early-transition-health">●●●</strong></span>
+          <span>ENERGY <strong id="early-transition-energy">●●●</strong></span>
+        </header>
+        <article class="story-card narrative-card">
+          <p class="eyebrow">Together again</p>
+          <h2 id="early-life-title">BACK WITH MOTHER</h2>
+          <div class="story-text">
+            <p>You are safe beside your mother again.</p>
+            <p>Over the following weeks, you grow stronger and become more confident in the water.</p>
+          </div>
+          <button id="begin-early-life-button" class="button button--primary" type="button">CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 6: one reusable early-life event. -->
+    <section id="early-life-screen" class="screen" aria-labelledby="early-event-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 2 WEEKS</strong></span>
+          <span>HEALTH <strong id="early-health">●●●</strong></span>
+          <span>ENERGY <strong id="early-energy">●●●</strong></span>
+        </header>
+        <article class="story-card narrative-card">
+          <p class="eyebrow">Growing up beside mother</p>
+          <h2 id="early-event-title"></h2>
+          <div id="early-event-story" class="story-text"></div>
+          <div class="choices" aria-label="Early life choices">
+            <button id="early-choice-one" class="button button--choice" type="button"></button>
+            <button id="early-choice-two" class="button button--choice" type="button"></button>
+          </div>
+          <p id="early-consequence" class="consequence" role="status" aria-live="polite"></p>
+          <button id="early-continue-button" class="button button--primary" type="button" hidden>CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 7: weaning transition into the First Hunt. -->
+    <section id="hunt-transition-screen" class="screen" aria-labelledby="hunt-transition-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 6 WEEKS</strong></span>
+          <span>HEALTH <strong id="transition-health">●●●</strong></span>
+          <span>ENERGY <strong id="transition-energy">●●●</strong></span>
+        </header>
+        <article class="story-card narrative-card">
+          <p class="eyebrow">A new lesson begins</p>
+          <h2 id="hunt-transition-title">ON YOUR OWN</h2>
+          <div class="story-text">
+            <p>Weeks have passed.</p>
+            <p>You wake on the shore as usual.</p>
+            <p>Your mother is gone.</p>
+            <p>This time, she does not return.</p>
+            <p>From now on, you must find food for yourself.</p>
+          </div>
+          <button id="begin-hunt-button" class="button button--primary" type="button">BEGIN YOUR FIRST HUNT</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 8: the top-down First Hunt mini-game. -->
+    <section id="first-hunt-screen" class="screen" aria-labelledby="first-hunt-title" hidden>
+      <div class="story-layout first-swim-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 6 WEEKS</strong></span>
+          <span>HEALTH <strong id="hunt-health">●●●</strong></span>
+          <span>ENERGY <strong id="hunt-energy">●●●</strong></span>
+        </header>
+
+        <article class="story-card first-swim-card hunt-card">
+          <p class="eyebrow">A first search for food</p>
+          <h2 id="first-hunt-title">FIRST HUNT</h2>
+          <p class="swim-message">Catch food. Avoid marine debris.</p>
+          <div class="hunt-readout">
+            <span>TIME <strong id="hunt-time">00:30</strong></span>
+            <span>SCORE <strong id="hunt-score">0</strong></span>
+            <span>DEBRIS <strong id="hunt-debris">0 / 3</strong></span>
+          </div>
+
+          <div id="hunt-area" class="game-area hunt-area" aria-label="First Hunt play area" role="application">
+            <div class="game-water-lines" aria-hidden="true"></div>
+          </div>
+
+          <div id="hunt-result" class="swim-result" hidden>
+            <p id="hunt-result-title"></p>
+            <p>Food Score: <strong id="hunt-final-score">0</strong></p>
+            <p>Debris: <strong id="hunt-final-debris">0 / 3</strong></p>
+            <p>Result: <strong id="hunt-result-category"></strong></p>
+            <p id="hunt-result-text"></p>
+            <p>Updated Health: <strong id="hunt-result-health"></strong></p>
+            <p>ENERGY <strong id="hunt-result-energy"></strong></p>
+            <button id="hunt-continue-button" class="button button--primary" type="button">CONTINUE</button>
+          </div>
+          <p id="hunt-continue-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 7: the passage into the juvenile stage. -->
+    <section id="juvenile-transition-screen" class="screen" aria-labelledby="juvenile-transition-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 1 YEAR</strong></span>
+          <span>HEALTH <strong id="juvenile-transition-health">●●●</strong></span>
+          <span>ENERGY <strong id="juvenile-transition-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">The seasons turn</p>
+          <h2 id="juvenile-transition-title">TIME PASSES...</h2>
+          <button id="begin-juvenile-button" class="button button--primary" type="button">CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 8: reusable Juvenile Life Event story and choice layout. -->
+    <section id="juvenile-screen" class="screen" aria-labelledby="juvenile-event-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 1 YEAR</strong></span>
+          <span>HEALTH <strong id="juvenile-health">●●●</strong></span>
+          <span>ENERGY <strong id="juvenile-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A juvenile life event</p>
+          <h2 id="juvenile-event-title"></h2>
+          <div id="juvenile-event-story" class="story-text"></div>
+          <div class="choices" aria-label="Juvenile event choices">
+            <button id="juvenile-choice-one" class="button button--choice" type="button"></button>
+            <button id="juvenile-choice-two" class="button button--choice" type="button"></button>
+          </div>
+          <p id="juvenile-consequence" class="consequence" role="status" aria-live="polite"></p>
+          <button id="juvenile-continue-button" class="button button--primary" type="button" hidden>CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 9: transition from juvenile life into adulthood. -->
+    <section id="years-pass-screen" class="screen" aria-labelledby="years-pass-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="adult-transition-health">●●●</strong></span>
+          <span>ENERGY <strong id="adult-transition-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A long journey behind you</p>
+          <h2 id="years-pass-title">THE YEARS PASS</h2>
+          <div class="story-text">
+            <p>You have survived your early years.</p>
+            <p>The ocean that once felt unfamiliar has become your home.</p>
+          </div>
+          <button id="adulthood-button" class="button button--primary" type="button">ENTER ADULTHOOD</button>
+          <p id="adulthood-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 10: adult branching story. -->
+    <section id="adult-screen" class="screen" aria-labelledby="adult-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="adult-health">●●●</strong></span>
+          <span>ENERGY <strong id="adult-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A new chapter</p>
+          <h2 id="adult-title">ADULTHOOD</h2>
+          <div class="story-text">
+            <p>Years have passed.</p>
+            <p>You have learned to survive on your own.</p>
+            <p>Another breeding season begins.</p>
+          </div>
+          <button id="adult-continue-button" class="button button--primary" type="button">CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 11: male breeding season story. -->
+    <section id="male-season-screen" class="screen" aria-labelledby="male-season-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="male-season-health">●●●</strong></span>
+          <span>ENERGY <strong id="male-season-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A challenge in the water</p>
+          <h2 id="male-season-title">BREEDING SEASON</h2>
+          <div class="story-text">
+            <p>Another male is displaying nearby.</p>
+            <p>Your calls carry through the water.</p>
+          </div>
+          <button id="begin-display-button" class="button button--primary" type="button">BEGIN DISPLAY</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 12: touch-friendly male display mini-game. -->
+    <section id="display-screen" class="screen" aria-labelledby="display-title" hidden>
+      <div class="story-layout first-swim-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="display-health">●●●</strong></span>
+          <span>ENERGY <strong id="display-energy-status">●●●</strong></span>
+        </header>
+        <article class="story-card first-swim-card">
+          <p class="eyebrow">Make yourself heard</p>
+          <h2 id="display-title">DISPLAY</h2>
+          <div id="display-area" class="game-area display-area" aria-label="Breeding display area" role="application">
+            <div class="display-character display-character--player">
+              <img class="display-seal display-seal--you" src="assets/seals/adult-swimming.png" alt="Your adult Harbor Seal">
+              <span class="mouth-anchor mouth-anchor--player" aria-hidden="true">
+                <div id="player-call-waves" class="call-waves call-waves--player" hidden></div>
+              </span>
+            </div>
+            <div class="display-character display-character--rival">
+              <img class="display-seal display-seal--rival" src="assets/seals/adult-resting.png" alt="Rival adult Harbor Seal">
+              <span class="mouth-anchor mouth-anchor--rival" aria-hidden="true">
+                <div id="rival-call-waves" class="call-waves call-waves--rival" hidden></div>
+              </span>
+            </div>
+          </div>
+          <p class="display-label">DISPLAY ENERGY <strong id="display-energy-value">0%</strong></p>
+          <div class="display-track"><div id="display-energy-fill" class="display-fill"></div></div>
+          <button id="call-button" class="button button--primary call-button" type="button">CALL</button>
+          <p id="display-time" class="consequence" role="status" aria-live="polite"></p>
+          <div id="display-complete-panel" class="swim-result" hidden>
+            <p id="display-complete-title">DISPLAY COMPLETE</p>
+            <p>Calls Made: <strong id="display-calls-made">0</strong></p>
+            <p>Completion Time: <strong id="display-completion-time"></strong></p>
+            <p>Display Strength: <strong id="display-strength"></strong></p>
+            <button id="see-outcome-button" class="button button--primary" type="button">SEE THE OUTCOME</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 13: male display outcome. -->
+    <section id="male-outcome-screen" class="screen" aria-labelledby="male-outcome-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="male-outcome-health">●●●</strong></span>
+          <span>ENERGY <strong id="male-outcome-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">The season decides</p>
+          <h2 id="male-outcome-title"></h2>
+          <div id="male-outcome-story" class="story-text"></div>
+          <button id="male-outcome-button" class="button button--primary" type="button">CONTINUE YOUR LIFE</button>
+          <p id="male-outcome-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 14: the post-display mating opportunity. -->
+    <section id="reproduction-screen" class="screen" aria-labelledby="reproduction-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="reproduction-health">●●●</strong></span>
+          <span>ENERGY <strong id="reproduction-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A possibility in the season</p>
+          <h2 id="reproduction-title"></h2>
+          <div id="reproduction-story" class="story-text"></div>
+          <button id="reproduction-button" class="button button--primary" type="button"></button>
+          <p id="reproduction-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 15: female birth story. -->
+    <section id="female-birth-screen" class="screen" aria-labelledby="female-birth-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="female-birth-health">●●●</strong></span>
+          <span>ENERGY <strong id="female-birth-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A new generation</p>
+          <h2 id="female-birth-title">A NEW LIFE</h2>
+          <div class="story-text">
+            <p>Some time later, a new life begins beside you.</p>
+            <p>You give birth to a pup.</p>
+          </div>
+          <button id="female-birth-continue-button" class="button button--primary" type="button">CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 16: female motherhood choice. -->
+    <section id="motherhood-screen" class="screen" aria-labelledby="motherhood-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 5 YEARS</strong></span>
+          <span>HEALTH <strong id="motherhood-health">●●●</strong></span>
+          <span>ENERGY <strong id="motherhood-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A familiar responsibility</p>
+          <h2 id="motherhood-title">MOTHERHOOD</h2>
+          <div class="story-text">
+            <p>Your pup is resting on the shore.</p>
+            <p>You need food.</p>
+            <p>For a moment, you remember being this small.</p>
+          </div>
+          <div class="choices" aria-label="Motherhood choices">
+            <button id="forage-button" class="button button--choice" type="button">GO FORAGE</button>
+            <button id="stay-pup-button" class="button button--choice" type="button">STAY WITH YOUR PUP</button>
+          </div>
+          <p id="motherhood-consequence" class="consequence" role="status" aria-live="polite"></p>
+          <div id="motherhood-reflection" class="story-text" hidden>
+            <p>When you were young, your own mother disappeared into the water to find food.</p>
+            <p>Now, you understand why.</p>
+          </div>
+          <button id="motherhood-continue-button" class="button button--primary" type="button" hidden>CONTINUE YOUR LIFE</button>
+          <p id="motherhood-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 17: entry into the Later Life system. -->
+    <section id="later-transition-screen" class="screen" aria-labelledby="later-transition-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong>· 12 YEARS</strong></span>
+          <span>HEALTH <strong id="later-transition-health">●●●</strong></span>
+          <span>ENERGY <strong id="later-transition-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A longer life begins</p>
+          <h2 id="later-transition-title">THE YEARS PASS</h2>
+          <div class="story-text">
+            <p>Seasons come and go.</p>
+            <p>The places that once felt unfamiliar have become part of your life.</p>
+          </div>
+          <button id="begin-later-life-button" class="button button--primary" type="button">CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 18: reusable Later Life event screen. -->
+    <section id="later-life-screen" class="screen" aria-labelledby="later-event-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong id="later-age">· 12 YEARS</strong></span>
+          <span>HEALTH <strong id="later-health">●●●</strong></span>
+          <span>ENERGY <strong id="later-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p id="later-event-eyebrow" class="eyebrow">A later-life event</p>
+          <h2 id="later-event-title"></h2>
+          <div id="later-event-story" class="story-text"></div>
+          <div class="choices" aria-label="Later Life choices">
+            <button id="later-choice-one" class="button button--choice" type="button"></button>
+            <button id="later-choice-two" class="button button--choice" type="button"></button>
+          </div>
+          <p id="later-consequence" class="consequence" role="status" aria-live="polite"></p>
+          <button id="later-continue-button" class="button button--primary" type="button" hidden>CONTINUE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 19: one-time Critical Condition rescue opportunity. -->
+    <section id="critical-screen" class="screen" aria-labelledby="critical-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong id="critical-age">· 12 YEARS</strong></span>
+          <span>HEALTH <strong id="critical-health">●</strong></span>
+          <span>ENERGY <strong id="critical-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A life-changing moment</p>
+          <h2 id="critical-title"></h2>
+          <div id="critical-story" class="story-text"></div>
+          <button id="critical-button" class="button button--primary" type="button"></button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 20: recovery and the release decision. -->
+    <section id="rehabilitation-screen" class="screen" aria-labelledby="rehabilitation-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong id="rehabilitation-age">· 12 YEARS</strong></span>
+          <span>HEALTH <strong id="rehabilitation-health">●</strong></span>
+          <span>ENERGY <strong id="rehabilitation-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">A new kind of uncertainty</p>
+          <h2 id="rehabilitation-title"></h2>
+          <div id="rehabilitation-story" class="story-text"></div>
+          <button id="rehabilitation-button" class="button button--primary" type="button"></button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 21: the final Wild age checkpoint. -->
+    <section id="old-life-screen" class="screen" aria-labelledby="old-life-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Seal status">
+          <span>AGE <strong id="old-life-age">· 30 YEARS</strong></span>
+          <span>HEALTH <strong id="old-life-health">●●●</strong></span>
+          <span>ENERGY <strong id="old-life-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">An exceptional life</p>
+          <h2 id="old-life-title">A LONG LIFE</h2>
+          <div class="story-text">
+            <p>You have lived through many seasons in the wild.</p>
+            <p>The coastline has changed, but these waters remain part of your life.</p>
+          </div>
+          <button id="old-life-button" class="button button--primary" type="button">REMEMBER THIS LIFE</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 22: temporary ending until the final Life Record milestone. -->
+    <section id="life-ending-screen" class="screen" aria-labelledby="life-ending-title" hidden>
+      <div class="story-layout">
+        <header class="status-bar" aria-label="Life ending status">
+          <span>AGE AT END <strong id="ending-age"></strong></span>
+          <span>HEALTH <strong id="ending-health">●●●</strong></span>
+          <span>ENERGY <strong id="ending-energy">●●●</strong></span>
+        </header>
+        <article class="story-card">
+          <p class="eyebrow">The end of this life</p>
+          <h2 id="life-ending-title"></h2>
+          <div id="life-ending-story" class="story-text"></div>
+          <button id="remember-life-button" class="button button--primary" type="button">REMEMBER THIS LIFE</button>
+          <p id="life-ending-message" class="consequence" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Screen 23: the reflective record of the completed life. -->
+    <section id="life-record-screen" class="screen" aria-labelledby="life-record-title" hidden>
+      <div class="story-layout">
+        <article class="story-card life-record-card">
+          <p class="eyebrow">A life remembered</p>
+          <h2 id="life-record-title">YOUR LIFE</h2>
+          <p class="life-record-subtitle">A Harbor Seal Life Remembered</p>
+
+          <div id="life-record-seal-portrait" class="seal-portrait life-record-seal-portrait">
+            <img class="seal-stage-image" src="assets/seals/adult-resting.png" alt="Harbor Seal portrait">
+          </div>
+
+          <div class="life-record-section">
+            <h3>HARBOR SEAL</h3>
+            <p><em>Phoca vitulina</em></p>
+            <dl class="traits">
+              <div><dt>SEX</dt><dd id="life-record-sex"></dd></div>
+              <div><dt>COAT</dt><dd id="life-record-coat"></dd></div>
+              <div><dt>PATTERN</dt><dd id="life-record-pattern"></dd></div>
+              <div><dt>LIFE SPAN</dt><dd id="life-record-lifespan"></dd></div>
+              <div><dt>LIFE PATH</dt><dd id="life-record-path"></dd></div>
+            </dl>
+          </div>
+
+          <div class="life-record-section">
+            <h3>FINAL STATE</h3>
+            <dl class="traits">
+              <div><dt>AGE</dt><dd id="life-record-final-age"></dd></div>
+              <div><dt>HEALTH</dt><dd id="life-record-final-health"></dd></div>
+              <div><dt>ENERGY</dt><dd id="life-record-final-energy"></dd></div>
+            </dl>
+          </div>
+
+          <div class="life-record-section">
+            <h3>SIGNIFICANT MOMENTS</h3>
+            <ul id="life-record-moments" class="life-record-list"></ul>
+          </div>
+
+          <div class="life-record-section life-record-reflection">
+            <h3>ONE LIFE</h3>
+            <p>You made choices along the way.</p>
+            <p>Chance shaped what happened next.</p>
+            <p>This was one Harbor Seal life among many, but this life was yours.</p>
+          </div>
+
+          <button id="live-another-life-button" class="button button--primary" type="button">LIVE ANOTHER LIFE</button>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
